@@ -1,4 +1,5 @@
 ﻿using Core.DomainObjects;
+using FluentValidation.Results;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,9 @@ namespace Checkout.Domain
 
         public Guid CustomerId { get; private set; }
         public decimal Amount { get; private set; }
+        public decimal? Discount { get; private set; }
+        public bool UtilizedVoucher { get; private set; }
+        public Voucher Voucher { get; private set; }
         public StatusOrder StatusOrder { get; private set; }
 
         private readonly List<OrderItem> _orderItems;
@@ -57,9 +61,45 @@ namespace Checkout.Domain
             CalculateOrderAmount();
         }
 
+        public ValidationResult ApplyVoucher(Voucher voucher)
+        {
+            var result = voucher.ValidateIfApplicable();
+            if (!result.IsValid) return result;
+
+            Voucher = voucher;
+            UtilizedVoucher = true;
+
+            CalculateDiscountAmount();
+
+            return result;
+        }
+
         private void CalculateOrderAmount()
         {
             Amount = OrderItems.Sum(x => x.CalculateValue());
+            CalculateDiscountAmount();
+        }
+
+        private void CalculateDiscountAmount()
+        {
+            if (!UtilizedVoucher) return;
+
+            decimal discount = 0;
+            var value = Amount;
+
+            if (Voucher.VoucherDiscountType == VoucherDiscountType.Value &&
+                Voucher.DiscountValue.HasValue)
+            {
+                discount = Voucher.DiscountValue.Value;
+            }
+            else if (Voucher.DiscountPercentage.HasValue)
+            {
+                discount = (Amount * Voucher.DiscountPercentage.Value) / 100;
+            }
+
+            value -= discount;
+            Amount = value < 0 ? 0 : value;
+            Discount = discount;
         }
 
         private bool ExistingOrderItem(OrderItem orderItem)
@@ -70,7 +110,7 @@ namespace Checkout.Domain
         private void ValidateItemQuantityAllowed(OrderItem orderItem)
         {
             var itemsQuantity = orderItem.Quantity;
-            if(ExistingOrderItem(orderItem))
+            if (ExistingOrderItem(orderItem))
             {
                 var existingItem = _orderItems.FirstOrDefault(x => x.ProductId == orderItem.ProductId);
                 itemsQuantity += existingItem.Quantity;
