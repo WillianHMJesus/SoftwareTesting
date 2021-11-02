@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Checkout.Domain
 {
-    public class Order
+    public class Order : Entity, IAggregateRoot
     {
         public static int MAX_UNITS_ITEM = 15;
         public static int MIN_UNITS_ITEM = 1;
@@ -74,6 +74,11 @@ namespace Checkout.Domain
             return result;
         }
 
+        public bool ExistingOrderItem(OrderItem orderItem)
+        {
+            return _orderItems.Any(x => x.ProductId == orderItem.ProductId);
+        }
+
         private void CalculateOrderAmount()
         {
             Amount = OrderItems.Sum(x => x.CalculateValue());
@@ -100,11 +105,6 @@ namespace Checkout.Domain
             value -= discount;
             Amount = value < 0 ? 0 : value;
             Discount = discount;
-        }
-
-        private bool ExistingOrderItem(OrderItem orderItem)
-        {
-            return _orderItems.Any(x => x.ProductId == orderItem.ProductId);
         }
 
         private void ValidateItemQuantityAllowed(OrderItem orderItem)

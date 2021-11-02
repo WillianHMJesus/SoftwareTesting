@@ -42,6 +42,14 @@ namespace Checkout.Domain
 
     public class VoucherValidator : AbstractValidator<Voucher>
     {
+        public static string CodeErrorMessage => "Voucher sem código válido.";
+        public static string ExpirationDateErrorMessage => "Esse voucher está expirado.";
+        public static string ActiveErrorMessage => "Esse voucher não está mais ativo.";
+        public static string UtilizedErrorMessage => "Esse voucher já foi utilizado.";
+        public static string QuantityErrorMessage => "Esse voucher não está mais disponível.";
+        public static string DiscountValueErrorMessage => "O valor do desconto precisa ser superior a 0.";
+        public static string DiscountPercentageErrorMessage => "O valor da porcentagem precisa ser superior a 0.";
+
         public VoucherValidator()
         {
             RuleFor(x => x.Code).NotEmpty()
@@ -77,14 +85,6 @@ namespace Checkout.Domain
                     .WithMessage(DiscountPercentageErrorMessage);
             });
         }
-
-        public static string CodeErrorMessage => "Voucher sem código válido.";
-        public static string ExpirationDateErrorMessage => "Esse voucher está expirado.";
-        public static string ActiveErrorMessage => "Esse voucher não está mais ativo.";
-        public static string UtilizedErrorMessage => "Esse voucher já foi utilizado.";
-        public static string QuantityErrorMessage => "Esse voucher não está mais disponível.";
-        public static string DiscountValueErrorMessage => "O valor do desconto precisa ser superior a 0.";
-        public static string DiscountPercentageErrorMessage => "O valor da porcentagem precisa ser superior a 0.";
 
         protected static bool ExpirationDateGreaterThanCurrent(DateTime expirationDate)
         {
